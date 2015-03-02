@@ -11,18 +11,23 @@ $(document).ready(function() {
 		 *
 		 */
 		if($selected.length){
-			var ids = $selected.map(function(){ return $(this).val(); }).toArray();
+			var ids = $selected.map(function(){ 
+				return parseInt($(this).val());
+			}).toArray();
 
 			$selects.not(":first").find("option:not(:selected)").each(function(){
 				var $op = $(this),
 						id = parseInt($op.data("parent"));
-				if(ids.indexOf(id) === -1 && $op.val()) $op.css("display", "none").prop("selected", false);
-			});
 
+				if(ids.indexOf(id) === -1 && $op.val().length > 0)
+					$op.css("display", "none").prop("selected", false);
+			});
+			
 		}else{
 			$selects.not(":first").find("option").each(function(){
 				$op = $(this);
-				if($op.val()) $op.css("display", "none").prop("selected", false);
+				if($op.val().length > 0)
+					$op.css("display", "none").prop("selected", false);
 			});
 		}
 
@@ -33,13 +38,15 @@ $(document).ready(function() {
 		 */
 		$selects.not(":last").on("change", function(e){
 			var $t = $(this),
-					id = parseInt($t.val());
+					id = parseInt($t.val()),
+					index = $selects.index($t);
 
-			$selects.filter(":gt("+$selects.index($t)+")").find("option").each(function(){
+			$selects.filter(":gt("+index+")").find("option").each(function(){
 				var $op = $(this);
 
-				if($op.val()){
-					if($op.data("parent") == id) $op.css("display", "block");
+				if($op.val().length > 0){
+					if($op.data("parent") == id)
+						$op.css("display", "block");
 					else{
 						$op.css("display", "none");
 						$op.prop("selected", false);
