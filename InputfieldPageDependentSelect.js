@@ -1,5 +1,5 @@
 $(document).ready(function() {
-	$(".InputfieldDependentSelect").each(function() {
+	$(".InputfieldPageDependentSelect").each(function() {
 
 		var $t = $(this),
 				$selects = $t.find("select"),
