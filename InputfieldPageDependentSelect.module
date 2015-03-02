@@ -1,0 +1,101 @@
+<?php
+
+class InputfieldPageDependentSelect extends Inputfield implements InputfieldPageListSelection {
+
+	public static function getModuleInfo() {
+		return array(
+			'title' => __('Page Dependent Select', __FILE__), // Module Title
+			'summary' => __('Selection of a single page filtered by multiple dependent select inputs.', __FILE__), // Module Summary
+			'version' => 1,
+			);
+	}
+
+	public function init() {
+		$this->set('parent_id', 0); 
+		$this->set('labelFieldName', 'title'); 
+		parent::init();
+	}
+
+	public function ___render(){
+		if(!strlen($this->parent_id)) {
+			return "<p class='error'>" . $this->_('Unable to render this field due to missing parent page in field settings.') . "</p>";
+		}
+
+		$out = '';
+
+		$parent = $this->pages->get($this->parent_id);
+
+		if(!$parent->numChildren) return "<p class='error'>" . $this->_('Unable to render this field due to missing children of this page.') . "</p>";
+
+		
+		$children = $parent->children;
+		$level = 0;
+		$select = $this->modules->get("InputfieldSelect");
+		$value = $this->pages->get($this->attr('value'));
+		if(!$value->id) $value = null;
+
+		while(count($children)){
+			$childrenFound = false;
+
+			$select = $this->modules->get("InputfieldSelect");
+			$select->attr("id", $this->name."_".$level);
+
+			foreach($children as $child) {
+				$label = $this->labelFieldName ? $child->get($this->labelFieldName) : $child->name; 
+				if($child->is(Page::statusUnpublished)) $label .= ' ' . $this->_('(unpublished)');
+
+				$options = array();
+				if($level) $options["data-parent"] = $child->parent->id;
+				if($value && $value->parents->get($child))  $options["selected"] = true;
+
+				$select->addOption($child->id, $label, $options); 
+			}
+
+			$children = $this->pages->find("parent=$children");
+			$level++;
+
+			if(!count($children)){
+				$select->attr("id+name", $this->name);
+				$select->value = $this->attr('value');
+			}
+
+			// We need to wait so see if it's the last level
+			$out .= $select->render();
+		}
+
+		return $out;
+	}
+
+	public function ___processInput(WireInputData $input) {
+		parent::___processInput($input); 
+		$this->value = (int) $this->value; 
+		return $this; 
+	}
+
+	/**
+	 * Install the autocomplete module
+	 *
+	 * Make sure we're in InputfieldPage's list of valid page selection widgets
+	 *
+	 */
+	public function ___install() {
+		$data = wire('modules')->getModuleConfigData('InputfieldPage'); 	
+		$data['inputfieldClasses'][] = $this->className(); 
+		wire('modules')->saveModuleConfigData('InputfieldPage', $data); 
+	}
+
+	/**
+	 * Uninstall the autocomplete module
+	 *
+	 * Remove from InputfieldPage's list of page selection widgets
+	 *
+	 */
+	public function ___uninstall() {
+		$data = wire('modules')->getModuleConfigData('InputfieldPage'); 	
+		foreach($data['inputfieldClasses'] as $key => $value) {
+			if($value == $this->className()) unset($data['inputfieldClasses'][$key]); 
+		}
+		wire('modules')->saveModuleConfigData('InputfieldPage', $data); 
+	}
+
+}
