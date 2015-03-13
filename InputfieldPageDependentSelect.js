@@ -3,7 +3,8 @@ $(document).ready(function() {
 
 		var $t = $(this),
 				$selects = $t.find("select"),
-				$selected = $selects.find("option:selected");
+				$selected = $selects.find("option:selected"),
+				$cache = $selects.clone();
 
 		/**
 		 *  Initialize the selectfields. If a value is selected only hide the ones,
@@ -15,19 +16,33 @@ $(document).ready(function() {
 				return parseInt($(this).val());
 			}).toArray();
 
-			$selects.not(":first").find("option:not(:selected)").each(function(){
-				var $op = $(this),
-						id = parseInt($op.data("parent"));
+			$selects.not(":first").each(function(){
+				$select = $(this);
+				
+				$select.find("option:not(:selected)").each(function(){
+					var $op = $(this),
+							id = parseInt($op.data("parent"));
 
-				if(ids.indexOf(id) === -1 && $op.val().length > 0)
-					$op.css("display", "none").prop("selected", false);
+					if(ids.indexOf(id) === -1 && $op.val().length > 0)
+						$op.css("display", "none").prop("selected", false);
+				});
+
+				// Just for safari compatibility
+				removeAllFieldsNotVisible($select);
 			});
 			
 		}else{
-			$selects.not(":first").find("option").each(function(){
-				$op = $(this);
-				if($op.val().length > 0)
-					$op.css("display", "none").prop("selected", false);
+			$selects.not(":first").each(function(){
+				$select = $(this);
+
+				$select.find("option").each(function(){
+					$op = $(this);
+					if($op.val().length > 0)
+						$op.css("display", "none").prop("selected", false);
+				});
+
+				// Just for safari compatibility
+				removeAllFieldsNotVisible($select);
 			});
 		}
 
@@ -41,21 +56,40 @@ $(document).ready(function() {
 					id = parseInt($t.val()),
 					index = $selects.index($t);
 
-			$selects.filter(":gt("+index+")").find("option").each(function(){
-				var $op = $(this);
+			$selects.filter(":gt("+index+")").each(function(){
+				var $select = $(this),
+						index = $selects.index($select);
 
-				if($op.val().length > 0){
-					if($op.data("parent") == id)
-						$op.css("display", "block");
-					else{
-						$op.css("display", "none");
-						$op.prop("selected", false);
+				// Just for safari compatibility
+				$select.children().remove();
+				$select.append($cache.eq(index).children().clone());
+				// end 
+
+				$select.find("option").each(function(){
+					var $op = $(this);
+					$op.prop("selected", false);
+
+					if($op.val().length > 0){
+						if($op.data("parent") == id)
+							$op.css("display", "block");
+						else{
+							$op.css("display", "none");
+							$op.prop("selected", false);
+						}
 					}
-				}
+				});
+
+				// Just for safari compatibility
+				removeAllFieldsNotVisible($select);
 			});
 		});
 
-
-
+		function removeAllFieldsNotVisible($ele){
+			if($ele.is("select")){
+				$ele.find("option").filter(function(){
+					return $(this).css("display") == "none" ? true : false;
+				}).remove();
+			}
+		}
 	}); 
 }); 
